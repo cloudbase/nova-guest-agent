@@ -6,15 +6,15 @@ import sys
 from oslo_config import cfg
 
 from nova_guest import service
-# from nova_guest import utils
+from nova_guest import utils
 
 CONF = cfg.CONF
 
 
 def main():
-    CONF(sys.argv[1:], project='coriolis',
+    CONF(sys.argv[1:], project='nova-guest',
          version="1.0.0")
-    # utils.setup_logging()
+    utils.setup_logging()
 
     server = service.WSGIService('nova-guest-api')
     launcher = service.service.launch(

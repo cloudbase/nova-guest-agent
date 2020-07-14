@@ -6,9 +6,10 @@ from oslo_middleware import request_id
 from oslo_serialization import jsonutils
 import webob
 
-from coriolis.api import wsgi
-from coriolis import context
-from coriolis.i18n import _
+from oslo_context import context
+
+from nova_guest.api import wsgi
+from nova_guest.i18n import _
 
 LOG = logging.getLogger(__name__)
 
@@ -43,28 +44,26 @@ class CoriolisKeystoneContext(wsgi.Middleware):
         # Get the auth token
         auth_token = req.headers.get('X_AUTH_TOKEN')
 
-        # Build a context, including the auth_token...
-        remote_address = req.remote_addr
+        # # Build a context, including the auth_token...
+        # remote_address = req.remote_addr
 
-        service_catalog = None
-        if req.headers.get('X_SERVICE_CATALOG') is not None:
-            try:
-                catalog_header = req.headers.get('X_SERVICE_CATALOG')
-                service_catalog = jsonutils.loads(catalog_header)
-            except ValueError:
-                raise webob.exc.HTTPInternalServerError(
-                    explanation=_('Invalid service catalog json.'))
+        # service_catalog = None
+        # if req.headers.get('X_SERVICE_CATALOG') is not None:
+        #     try:
+        #         catalog_header = req.headers.get('X_SERVICE_CATALOG')
+        #         service_catalog = jsonutils.loads(catalog_header)
+        #     except ValueError:
+        #         raise webob.exc.HTTPInternalServerError(
+        #             explanation=_('Invalid service catalog json.'))
 
-        ctx = context.RequestContext(user,
-                                     tenant,
+        ctx = context.RequestContext(user_id=user,
+                                     project_id=tenant,
                                      project_name=project_name,
                                      project_domain_name=project_domain_name,
                                      user_domain_name=user_domain_name,
                                      roles=roles,
                                      auth_token=auth_token,
-                                     remote_address=remote_address,
-                                     service_catalog=service_catalog,
                                      request_id=req_id)
 
-        req.environ['coriolis.context'] = ctx
+        req.environ['nova_agent.context'] = ctx
         return self.application

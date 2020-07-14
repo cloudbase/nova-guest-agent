@@ -13,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+# pylint: disable=assignment-from-none
 
 import inspect
 import math
@@ -215,60 +216,6 @@ class Request(webob.Request):
         """
         return self.get_db_items(key).get(item_key)
 
-    def cache_db_volumes(self, volumes):
-        # NOTE(mgagne) Cache it twice for backward compatibility reasons
-        self.cache_db_items('volumes', volumes, 'id')
-        self.cache_db_items(self.path, volumes, 'id')
-
-    def cache_db_volume(self, volume):
-        # NOTE(mgagne) Cache it twice for backward compatibility reasons
-        self.cache_db_items('volumes', [volume], 'id')
-        self.cache_db_items(self.path, [volume], 'id')
-
-    def get_db_volumes(self):
-        return (self.get_db_items('volumes') or
-                self.get_db_items(self.path))
-
-    def get_db_volume(self, volume_id):
-        return (self.get_db_item('volumes', volume_id) or
-                self.get_db_item(self.path, volume_id))
-
-    def cache_db_volume_types(self, volume_types):
-        self.cache_db_items('volume_types', volume_types, 'id')
-
-    def cache_db_volume_type(self, volume_type):
-        self.cache_db_items('volume_types', [volume_type], 'id')
-
-    def get_db_volume_types(self):
-        return self.get_db_items('volume_types')
-
-    def get_db_volume_type(self, volume_type_id):
-        return self.get_db_item('volume_types', volume_type_id)
-
-    def cache_db_snapshots(self, snapshots):
-        self.cache_db_items('snapshots', snapshots, 'id')
-
-    def cache_db_snapshot(self, snapshot):
-        self.cache_db_items('snapshots', [snapshot], 'id')
-
-    def get_db_snapshots(self):
-        return self.get_db_items('snapshots')
-
-    def get_db_snapshot(self, snapshot_id):
-        return self.get_db_item('snapshots', snapshot_id)
-
-    def cache_db_backups(self, backups):
-        self.cache_db_items('backups', backups, 'id')
-
-    def cache_db_backup(self, backup):
-        self.cache_db_items('backups', [backup], 'id')
-
-    def get_db_backups(self):
-        return self.get_db_items('backups')
-
-    def get_db_backup(self, backup_id):
-        return self.get_db_item('backups', backup_id)
-
     def best_match_content_type(self):
         """Determine the requested response content-type."""
         if 'nova_guest.best_content_type' not in self.environ:
@@ -366,7 +313,7 @@ class Middleware(Application):
 
     @webob.dec.wsgify(RequestClass=Request)
     def __call__(self, req):
-        response = self.process_request(req)
+        response = self.process_request(req)  # noqa
         if response:
             return response
         response = req.get_response(self.application)
@@ -1081,14 +1028,18 @@ class ControllerMetaclass(type):
 class Controller(object):
     """Default controller."""
 
-    _view_builder_class = None
+    def _get_builder_class(self):
+        if hasattr(self, "_view_builder_class"):
+            return getattr(self, "_view_builder_class")
+        return None
 
     def __init__(self, view_builder=None):
         """Initialize controller with a view builder instance."""
+        builder_class = self._get_builder_class()
         if view_builder:
             self._view_builder = view_builder
-        elif self._view_builder_class:
-            self._view_builder = self._view_builder_class()
+        elif builder_class:
+            self._view_builder = builder_class()
         else:
             self._view_builder = None
 

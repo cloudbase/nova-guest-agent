@@ -30,3 +30,4 @@ mysqlclient
 strict-rfc3339
 sqlalchemy
 webob
+libvirt-python

@@ -68,7 +68,7 @@ class FaultWrapper(wsgi.Middleware):
         if headers:
             outer.headers = headers
         if safe:
-            msg = (inner.msg if isinstance(inner, exception.CoriolisException)
+            msg = (inner.msg if isinstance(inner, exception.NovaGuestException)
                    else six.text_type(inner))
             params = {'exception': inner.__class__.__name__,
                       'explanation': msg}
