@@ -33,5 +33,12 @@ class AgentClient(object):
             raise exception.NovaGuestException(
                 "Instance must be online. State is"
                 ": %s" % server_details.status)
-
+        server = getattr(server_details, "OS-EXT-SRV-ATTR:host")
+        instance_name = getattr(
+            server_details, "OS-EXT-SRV-ATTR:instance_name")
+        rpc_cli = self._client.prepare(server=server)
         network_info = cli.get_metadata(server_id)
+
+        return rpc_cli.call(
+            ctxt, "apply_networking", instance_name=instance_name,
+            network_config=network_info)

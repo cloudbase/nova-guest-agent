@@ -74,6 +74,7 @@ class AgentServerEndpoint(object):
                 "Guest must be online.")
         
         platform = self._conn.get_guest_platform(dom)
-        cmd, parameters = self._get_apply_network_command(platform, network_config)
+        cmd, parameters = self._get_apply_network_command(
+            platform, network_config)
         output = self._conn.execute_command(dom, cmd, parameters)
         return output
