@@ -15,23 +15,35 @@ from nova_guest import rpc
 from nova_guest import utils
 
 
-service_opts = [
+api_opts = [
     cfg.StrOpt('api_nova_guest_listen',
                default="0.0.0.0",
-               help='IP address on which the Migration API listens'),
+               help='IP address on which the Nova Guest Agent API listens'),
     cfg.PortOpt('api_nova_guest_listen_port',
-                default=7667,
-                help='Port on which the Migration API listens'),
+                default=6776,
+                help='Port on which the Nova Guest Agent API listens'),
     cfg.IntOpt('api_nova_guest_workers',
-               help='Number of workers for the Migration API service. '
+               help='Number of workers for the Nova Guest Agent API service. '
                     'The default is equal to the number of CPUs available.'),
+    cfg.BoolOpt('caching',
+                default=True,
+                help="Enable caching for the API service."),
+    cfg.IntOpt('cache_time',
+               default=600,
+               help="time to cache a query in seconds."),
+
+]
+
+worker_opts = [
     cfg.IntOpt('messaging_workers',
                help='Number of workers for the messaging service. '
                     'The default is equal to the number of CPUs available.'),
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(service_opts)
+CONF.register_opts(api_opts, "api")
+CONF.register_opts(worker_opts, "worker")
+
 LOG = logging.getLogger(__name__)
 
 
@@ -77,14 +89,15 @@ def check_locks_dir_empty():
 
 class WSGIService(service.ServiceBase):
     def __init__(self, name):
-        self._host = CONF.api_nova_guest_listen
-        self._port = CONF.api_nova_guest_listen_port
+        self._host = CONF.api.api_nova_guest_listen
+        self._port = CONF.api.api_nova_guest_listen_port
 
         if platform.system() == "Windows":
             self._workers = 1
         else:
             self._workers = (
-                CONF.api_nova_guest_workers or processutils.get_worker_count())
+                (CONF.api.api_nova_guest_workers or
+                 processutils.get_worker_count()))
 
         self._loader = wsgi.Loader(CONF)
         self._app = self._loader.load_app(name)
@@ -118,7 +131,7 @@ class MessagingService(service.ServiceBase):
                                   version=version)
         self._server = rpc.get_server(target, endpoints)
 
-        self._workers = (worker_count or CONF.messaging_workers or
+        self._workers = (worker_count or CONF.worker.messaging_workers or
                          processutils.get_worker_count())
 
     def get_workers_count(self):

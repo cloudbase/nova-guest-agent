@@ -1,4 +1,5 @@
 import base64
+import json
 
 from oslo_config import cfg
 import oslo_messaging as messaging
@@ -28,10 +29,11 @@ CONF.register_opts(worker_opts, 'nova_guest_agent')
 
 COMMAND_MAP = {
     agent.OS_TYPE_LINUX: {
-        "net_apply": ["/scripts/apply-network-config",],
+        "net_apply": "/scripts/apply-network-config",
     },
     agent.OS_TYPE_WINDOWS: {
-        "net_apply": ["powershell.exe", "-NonInteractive", "-ExecutionPolicy", "RemoteSigned", "-EncodedCommand"],
+        # "net_apply": ["powershell.exe", "-NonInteractive", "-ExecutionPolicy", "RemoteSigned", "-EncodedCommand"],
+        "net_apply": "C:\\scripts\\apply-network-config.bat",
     }
 }
 
@@ -46,10 +48,17 @@ class AgentServerEndpoint(object):
             CONF.nova_guest_agent.libvirt_url)
 
     def _get_netw_command_linux(self, network_config):
-        return ()
+        cmd_path = COMMAND_MAP[agent.OS_TYPE_LINUX]["net_apply"]
+        serialized_net_cfg = base64.b64encode(
+            json.dumps(network_config))
+        return (cmd_path, [serialized_net_cfg,])
 
     def _get_netw_command_windows(self, network_config):
-        return ()
+        cmd_path = COMMAND_MAP[agent.OS_TYPE_WINDOWS]["net_apply"]
+        serialized_net_cfg = base64.b64encode(
+            json.dumps(network_config))
+        params = ["/c", cmd_path, serialized_net_cfg]
+        return ("cmd.exe", params)
 
     def _get_apply_network_command(self, platform, network_config):
         func = getattr(self, "_get_netw_command_%s" % platform, None)
