@@ -70,7 +70,7 @@ class AgentServerEndpoint(object):
     def apply_networking(self, ctxt, instance_name, network_config):
         dom = self._conn.get_instance_by_name(instance_name)
         if self._conn.is_alive(dom) is False:
-            raise exception.NovaGuestException(
+            raise exception.Conflict(
                 "Guest must be online.")
         
         platform = self._conn.get_guest_platform(dom)

@@ -30,12 +30,16 @@ class AgentClient(object):
         cli = metadata.MetadataWrapper(ctxt)
         server_details = cli.get_instance(server_id)
         if server_details.status != "ACTIVE":
-            raise exception.NovaGuestException(
+            raise exception.Conflict(
                 "Instance must be online. State is"
                 ": %s" % server_details.status)
-        server = getattr(server_details, "OS-EXT-SRV-ATTR:host")
+        server = getattr(server_details, "OS-EXT-SRV-ATTR:host", None)
         instance_name = getattr(
-            server_details, "OS-EXT-SRV-ATTR:instance_name")
+            server_details, "OS-EXT-SRV-ATTR:instance_name", None)
+        if None in (server, instance_name):
+            raise exception.NovaGuestException(
+                "failed to find required information in instance object")
+
         rpc_cli = self._client.prepare(server=server)
         network_info = cli.get_metadata(server_id)
 

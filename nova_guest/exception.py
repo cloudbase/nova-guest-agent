@@ -352,6 +352,13 @@ class NotSupportedOperation(Invalid):
     code = 405
 
 
+class NotAcceptable(Invalid):
+    message = _("Operation not supported: %(operation)s.")
+    code = 406
+    safe = True
+
+
+
 class TaskProcessException(NovaGuestException):
     safe = True
 

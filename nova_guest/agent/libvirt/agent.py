@@ -29,7 +29,7 @@ class AgentConnection(object):
         for dom in allDomains:
             if dom.name() == instanceName:
                 return dom
-        raise exception.NovaGuestException(
+        raise exception.NotFound(
             "could not find instance with name %s" % instanceName)
 
     def ping(self, dom):

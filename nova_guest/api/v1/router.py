@@ -22,7 +22,10 @@ class APIRouter(api.APIRouter):
     def _setup_routes(self, mapper, ext_mgr):
         mapper.redirect("", "/")
 
-        self.resources['networking'] = networking.create_resource()
-        mapper.resource('networking', 'networking',
-                        controller=self.resources['networking'])
-
+        self.resources['networking_actions'] = networking.create_resource()
+        endpoint_path = '/{project_id}/networking/{instance_id}/ctions'
+        mapper.connect('networking_actions',
+                       endpoint_path,
+                       controller=self.resources['networking_actions'],
+                       action='action',
+                       conditions={'method': 'POST'})
