@@ -5,6 +5,7 @@ from nova_guest import rpc
 from nova_guest import utils
 from nova_guest import exception
 from nova_guest.metadata import metadata
+from nova_guest.agent.rpc.config import CONF
 
 VERSION = "1.0"
 CONF = cfg.CONF

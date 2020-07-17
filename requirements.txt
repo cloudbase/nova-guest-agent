@@ -1,13 +1,10 @@
 eventlet
 keystoneauth1
 keystonemiddleware
-jsonschema
-PyMySQL
 oslo.cache
 oslo.concurrency
 oslo.config
 oslo.context>=2.19.1
-oslo.db
 oslo.i18n
 oslo.log
 oslo.messaging
@@ -16,7 +13,6 @@ oslo.policy
 oslo.serialization
 oslo.service>=1.12.0
 oslo.versionedobjects
-paramiko>=2.1.0
 paste
 pbr
 psutil
@@ -26,9 +22,7 @@ python-keystoneclient
 python-memcached>=1.56
 PyYAML
 requests
-mysqlclient
 strict-rfc3339
-sqlalchemy
 webob
 libvirt-python
 python-novaclient

@@ -8,24 +8,9 @@ from nova_guest import rpc
 from nova_guest import utils
 from nova_guest import exception
 from nova_guest.agent.libvirt import agent
+from nova_guest.agent.rpc.config import CONF
 
 VERSION = "1.0"
-
-
-worker_opts = [
-    cfg.IntOpt("worker_rpc_timeout",
-               help="Number of seconds until RPC calls to the worker timeout"),
-    cfg.StrOpt("host",
-               help="The hostname of the hypervisor. This value must match the"
-               "hostname value used in the nova compute config."),
-    cfg.StrOpt("libvirt_url",
-               default=None,
-               help="Libvirt URL to which we will connect. Leave empty to"
-               "connect to localhost.")
-]
-
-CONF = cfg.CONF
-CONF.register_opts(worker_opts, 'nova_guest_agent')
 
 COMMAND_MAP = {
     agent.OS_TYPE_LINUX: {
