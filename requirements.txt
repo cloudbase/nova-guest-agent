@@ -31,3 +31,5 @@ strict-rfc3339
 sqlalchemy
 webob
 libvirt-python
+python-novaclient
+python-neutronclient

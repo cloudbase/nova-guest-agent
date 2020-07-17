@@ -7,14 +7,7 @@ from nova_guest import exception
 from nova_guest.metadata import metadata
 
 VERSION = "1.0"
-
-worker_opts = [
-    cfg.IntOpt("worker_rpc_timeout",
-               help="Number of seconds until RPC calls to the worker timeout")
-]
-
 CONF = cfg.CONF
-CONF.register_opts(worker_opts, 'nova_guest_agent')
 
 
 class AgentClient(object):

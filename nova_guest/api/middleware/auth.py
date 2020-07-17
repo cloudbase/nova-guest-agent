@@ -14,7 +14,7 @@ from nova_guest.i18n import _
 LOG = logging.getLogger(__name__)
 
 
-class CoriolisKeystoneContext(wsgi.Middleware):
+class NovaGuestKeystoneContext(wsgi.Middleware):
     @webob.dec.wsgify(RequestClass=wsgi.Request)
     def __call__(self, req):
         user = req.headers.get('X_USER')
