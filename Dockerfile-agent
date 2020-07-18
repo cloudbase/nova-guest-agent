@@ -1,0 +1,21 @@
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    pkg-config libvirt-dev python3-pip git && apt-get clean
+
+ENV DEBIAN_FRONTEND=newt
+
+RUN /bin/bash -c "pip3 install -U pip"
+RUN /bin/bash -c "pip3 install wheel"
+
+RUN mkdir /root/nova-guest/
+COPY . /root/nova-guest/
+
+RUN /bin/bash -c "pip3 install /root/nova-guest"
+
+# This can be mapped in a volume
+RUN mkdir -p /var/log/nova-guest
+
+CMD ["/usr/local/bin/nova-guest-agent", "--config-file=/etc/nova-guest/nova-guest.conf"]

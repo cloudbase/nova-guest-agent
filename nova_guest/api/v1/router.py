@@ -23,7 +23,7 @@ class APIRouter(api.APIRouter):
         mapper.redirect("", "/")
 
         self.resources['networking_actions'] = networking.create_resource()
-        endpoint_path = '/{project_id}/networking/{instance_id}/ctions'
+        endpoint_path = '/{project_id}/networking/{instance_id}/actions'
         mapper.connect('networking_actions',
                        endpoint_path,
                        controller=self.resources['networking_actions'],

@@ -16,13 +16,13 @@ from nova_guest import utils
 
 
 api_opts = [
-    cfg.StrOpt('api_nova_guest_listen',
+    cfg.StrOpt('api_listen',
                default="0.0.0.0",
                help='IP address on which the Nova Guest Agent API listens'),
-    cfg.PortOpt('api_nova_guest_listen_port',
-                default=6776,
+    cfg.PortOpt('api_listen_port',
+                default=4224,
                 help='Port on which the Nova Guest Agent API listens'),
-    cfg.IntOpt('api_nova_guest_workers',
+    cfg.IntOpt('api_workers',
                help='Number of workers for the Nova Guest Agent API service. '
                     'The default is equal to the number of CPUs available.'),
     cfg.BoolOpt('caching',
@@ -89,14 +89,14 @@ def check_locks_dir_empty():
 
 class WSGIService(service.ServiceBase):
     def __init__(self, name):
-        self._host = CONF.api.api_nova_guest_listen
-        self._port = CONF.api.api_nova_guest_listen_port
+        self._host = CONF.api.api_listen
+        self._port = CONF.api.api_listen_port
 
         if platform.system() == "Windows":
             self._workers = 1
         else:
             self._workers = (
-                (CONF.api.api_nova_guest_workers or
+                (CONF.api.api_workers or
                  processutils.get_worker_count()))
 
         self._loader = wsgi.Loader(CONF)
