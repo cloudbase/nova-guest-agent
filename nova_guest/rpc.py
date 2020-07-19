@@ -62,5 +62,5 @@ def get_client(target, serializer=None, timeout=None):
 def get_server(target, endpoints, serializer=None):
     serializer = RequestContextSerializer(serializer)
     return messaging.get_rpc_server(_get_transport(), target, endpoints,
-                                    executor='eventlet',
+                                    executor='threading',
                                     serializer=serializer)

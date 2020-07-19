@@ -7,15 +7,20 @@ from nova_guest import keystone
 from nova_guest import exception
 from nova_guest import cache
 
+from oslo_log import log as logging
+
 MEMOIZE = cache.get_cache_decorator('api')
+LOG = logging.getLogger(__name__)
 
 
 class MetadataWrapper(object):
 
     def __init__(self, ctxt):
         self._session = keystone.create_keystone_session(ctxt)
-        self._nova_client = nova_client.Client("2", session=self._session)
-        self._neutron_client = neutorn_client.Client(session=self._session)
+        self._nova_client = nova_client.Client(
+            "2", session=self._session, interface="internalURL")
+        self._neutron_client = neutorn_client.Client(
+            session=self._session, interface="internalURL")
 
     @MEMOIZE
     def _get_network_details(self, network_id):
@@ -31,6 +36,10 @@ class MetadataWrapper(object):
         links = []
         for port in ports:
             net_details = self._get_network_details(port["network_id"])
+            if len(net_details["networks"]) != 1:
+                raise exception.NovaGuestException(
+                        "expected exactly one result. Got %d" % len(net_details["networks"]))
+            net_details = net_details["networks"][0]
             links.append(
                 {
                     "id": "tap%s" % port["id"][:11],
@@ -85,13 +94,13 @@ class MetadataWrapper(object):
         if subnet["enable_dhcp"]:
             if subnet["ip_version"] == 4:
                 return net
-        
+
         net["netmask"] = self._get_netmask(subnet["cidr"])[1]
         net["ip_address"] = fixed_ip["ip_address"]
         net["routes"] = []
         if subnet["gateway_ip"]:
             net["routes"].append(
-                self._get_default_route(subnet) 
+                self._get_default_route(subnet)
             )
         net["routes"].extend(
             self._get_host_routes(subnet))
@@ -112,6 +121,10 @@ class MetadataWrapper(object):
             for fixed_ip in port["fixed_ips"]:
                 subnet = self._get_subnet_details(
                     fixed_ip["subnet_id"])
+                if len(subnet["subnets"]) != 1:
+                    raise exception.NovaGuestException(
+                        "expected one and only one result")
+                subnet = subnet["subnets"][0]
                 net = {
                     "id": "network" + str(idx),
                     "link": "tap%s" % port["id"][:11],
@@ -131,7 +144,7 @@ class MetadataWrapper(object):
                 if svc not in svcs:
                     svcs.append(svc)
         return svcs
-    
+
     def get_instance(self, instance_id):
         instance = self._nova_client.servers.get(instance_id)
         return instance
@@ -145,4 +158,3 @@ class MetadataWrapper(object):
             "services": self._extract_services(nets)
         }
         return ret
-
