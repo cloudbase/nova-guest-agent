@@ -10,6 +10,11 @@ from nova_guest import exception
 from nova_guest.agent.libvirt import agent
 from nova_guest.agent.rpc.config import CONF
 
+from oslo_log import log as logging
+
+LOG = logging.getLogger(__name__)
+
+
 VERSION = "1.0"
 
 COMMAND_MAP = {
@@ -26,22 +31,24 @@ COMMAND_MAP = {
 class AgentServerEndpoint(object):
 
     def __init__(self, timeout=None):
-        if CONF.nova_guest_agent.host == "":
-            raise exception.NovaGuestException("host config value must be set")
-        self._server = CONF.nova_guest_agent.host
+        if CONF.nova_guest_agent.host != "":
+            self.server = CONF.nova_guest_agent.host
+        else:
+            self.server = utils.get_hostname()
+        self._server = self.server
         self._conn = agent.AgentConnection(
             CONF.nova_guest_agent.libvirt_url)
 
     def _get_netw_command_linux(self, network_config):
         cmd_path = COMMAND_MAP[agent.OS_TYPE_LINUX]["net_apply"]
         serialized_net_cfg = base64.b64encode(
-            json.dumps(network_config))
+            json.dumps(network_config).encode()).decode()
         return (cmd_path, [serialized_net_cfg,])
 
     def _get_netw_command_windows(self, network_config):
         cmd_path = COMMAND_MAP[agent.OS_TYPE_WINDOWS]["net_apply"]
         serialized_net_cfg = base64.b64encode(
-            json.dumps(network_config))
+            json.dumps(network_config).encode()).decode()
         params = ["/c", cmd_path, serialized_net_cfg]
         return ("cmd.exe", params)
 
@@ -53,11 +60,12 @@ class AgentServerEndpoint(object):
         return func(network_config)
 
     def apply_networking(self, ctxt, instance_name, network_config):
+        LOG.debug("Got request for instance %s with config %s" % (instance_name, json.dumps(network_config, indent=2)))
         dom = self._conn.get_instance_by_name(instance_name)
         if self._conn.is_alive(dom) is False:
             raise exception.Conflict(
                 "Guest must be online.")
-        
+
         platform = self._conn.get_guest_platform(dom)
         cmd, parameters = self._get_apply_network_command(
             platform, network_config)
