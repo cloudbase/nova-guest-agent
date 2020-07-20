@@ -9,7 +9,7 @@ class API(object):
     def __init__(self):
         self._rpc_client = rpc_client.AgentClient()
 
-    @utils.bad_request_on_error("Invalid destination environment: %s")
+    @utils.bad_request_on_error("Error applying network config: %s")
     def apply_networking(self, ctxt, server_id):
         output = self._rpc_client.apply_network_config(ctxt, server_id)
         return (True, output)

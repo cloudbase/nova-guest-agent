@@ -57,7 +57,7 @@ class AgentServerEndpoint(object):
     def _get_apply_network_command(self, platform, network_config):
         func = getattr(self, "_get_netw_command_%s" % platform, None)
         if func is None:
-            raise exception.NovaGuestException(
+            raise exception.NotSupportedOperation(
                 "No network apply method for %r" % platform)
         return func(network_config)
 

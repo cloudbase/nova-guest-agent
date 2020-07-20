@@ -30,6 +30,8 @@ class NetworkingController(api_wsgi.Controller):
             raise exc.HTTPNotFound(explanation=ex.msg)
         except exception.InvalidParameterValue as ex:
             raise exc.HTTPNotFound(explanation=ex.msg)
+        except exception.NotSupportedOperation as ex:
+            raise exc.HTTPConflict(explanation=ex.msg)
         except exception.Conflict as ex:
             raise exc.HTTPConflict(explanation=ex.msg)
 
