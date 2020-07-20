@@ -20,11 +20,11 @@ class NetworkingController(api_wsgi.Controller):
     def _apply_networking(self, req, instance_id, body):
         context = req.environ['nova_agent.context']
         try:
-            output = self._netw_api.apply_networking(
+            success, output = self._netw_api.apply_networking(
                 context, instance_id)
             return {
                 "apply-networking":
-                    {"success": True, "message": output}
+                    {"success": success, "message": output}
             }
         except exception.NotFound as ex:
             raise exc.HTTPNotFound(explanation=ex.msg)

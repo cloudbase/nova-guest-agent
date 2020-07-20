@@ -11,4 +11,5 @@ class API(object):
 
     @utils.bad_request_on_error("Invalid destination environment: %s")
     def apply_networking(self, ctxt, server_id):
-        return self._rpc_client.apply_network_config(ctxt, server_id)
+        output = self._rpc_client.apply_network_config(ctxt, server_id)
+        return (True, output)

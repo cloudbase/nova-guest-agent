@@ -133,8 +133,8 @@ class MetadataWrapper(object):
                 }
                 self._append_aditional_info(
                     net, fixed_ip, subnet)
-            networks.append(net)
-            idx += 1
+                networks.append(net)
+                idx += 1
         return networks
 
     def _extract_services(self, nets):
