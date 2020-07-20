@@ -110,7 +110,7 @@ class AgentConnection(object):
         os_info = self.get_os_info(dom)
         # TODO: properly detect plarform
         os_id = os_info.get("id")
-        return OS_TYPE_MAP.get(os_id, OS_TYPE_UNKNOWN)
+        return OS_TYPE_MAP.get(os_id, OS_TYPE_LINUX)
     
     def is_alive(self, dom):
         state, _ = dom.state()
@@ -119,6 +119,9 @@ class AgentConnection(object):
         return True
 
     def execute_command(self, dom, command, parameters, wait=True):
+        if self.ping(dom) is False:
+            raise exception.GuestAgentNotAvailable()
+
         command = {
             "execute": "guest-exec",
             "arguments": {

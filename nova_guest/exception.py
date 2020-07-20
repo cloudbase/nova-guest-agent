@@ -139,6 +139,10 @@ class Conflict(NovaGuestException):
     safe = True
 
 
+class GuestAgentNotAvailable(Conflict):
+    message = _("qemu-guest-agent not available")
+
+
 class AdminRequired(NotAuthorized):
     message = _("User does not have admin privileges")
 
