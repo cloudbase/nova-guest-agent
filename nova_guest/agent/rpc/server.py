@@ -23,7 +23,7 @@ COMMAND_MAP = {
     },
     agent.OS_TYPE_WINDOWS: {
         # "net_apply": ["powershell.exe", "-NonInteractive", "-ExecutionPolicy", "RemoteSigned", "-EncodedCommand"],
-        "net_apply": "C:\\scripts\\apply-network-config.bat",
+        "net_apply": "C:\\scripts\\apply-network-config.ps1",
     }
 }
 
@@ -49,8 +49,10 @@ class AgentServerEndpoint(object):
         cmd_path = COMMAND_MAP[agent.OS_TYPE_WINDOWS]["net_apply"]
         serialized_net_cfg = base64.b64encode(
             json.dumps(network_config).encode()).decode()
-        params = ["/c", cmd_path, serialized_net_cfg]
-        return ("cmd.exe", params)
+        command = "%s %s" % (cmd_path, serialized_net_cfg)
+        params = ["-NonInteractive", "-ExecutionPolicy",
+                  "RemoteSigned", "-Command", command]
+        return ("powershell.exe", params)
 
     def _get_apply_network_command(self, platform, network_config):
         func = getattr(self, "_get_netw_command_%s" % platform, None)
