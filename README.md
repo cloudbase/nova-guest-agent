@@ -38,7 +38,10 @@ Edit the ```nova-guest.conf``` file to suit your environment.
 Deploy the container
 
 ```bash
-docker run -h=`hostname` --network host -v /etc/nova-guest:/etc/nova-guest:ro -v nova_guest_api_logs:/var/log/nova-guest:rw -d --name nova_guest_api docker.example.com/nova-guest-api:latest
+docker run -h=`hostname` --network host -v /etc/nova-guest:/etc/nova-guest:ro \
+    -v nova_guest_api_logs:/var/log/nova-guest:rw \
+    -d --name nova_guest_api \
+    docker.example.com/nova-guest-api:latest
 ```
 
 ## Deploy the nova-guest-agent container
@@ -70,7 +73,33 @@ Edit the ```nova-guest.conf``` file to suit your environment.
 Deploy the container
 
 ```bash
-docker run -h=`hostname` --network host -v /run:/run:shared -v /etc/nova-guest:/etc/nova-guest:ro -v nova_guest_agent_logs:/var/log/nova-guest:rw -d --name nova_guest_agent docker.example.com/nova-guest-agent:latest
+docker run -h=`hostname` --network host -v /run:/run:shared \
+    -v /etc/nova-guest:/etc/nova-guest:ro \
+    -v nova_guest_agent_logs:/var/log/nova-guest:rw \
+    -d --name nova_guest_agent \
+    docker.example.com/nova-guest-agent:latest
 ```
 
 The ```/run``` volume is needed in order to give the ```nova_guest_agent``` container access to ```libvirt```.
+
+
+## Create endpoints
+
+We will need to create a new service type, then add the necessary endpoints. By default the service runs on port 4224.
+
+Create the service.
+
+```bash
+openstack service create --name nova-guest --description "Nova guest agent integration" guest-agent
+```
+
+Add the endpoints:
+
+```bash
+openstack endpoint create --region RegionOne \
+    guest-agent admin "http://192.168.100.4:4224/v1/%(tenant_id)s"
+openstack endpoint create --region RegionOne \
+    guest-agent internal "http://192.168.100.4:4224/v1/%(tenant_id)s"
+openstack endpoint create --region RegionOne \
+    guest-agent public "https://192.168.100.4:4224/v1/%(tenant_id)s"
+```
