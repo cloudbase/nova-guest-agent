@@ -127,6 +127,10 @@ class NotAuthorized(NovaGuestException):
     safe = True
 
 
+class GuestExecutionError(NovaGuestException):
+    message = _("Failed to execute command")
+
+
 class PolicyNotAuthorized(NovaGuestException):
     message = _("Policy doesn't allow %(action)s to be performed.")
     code = 403
