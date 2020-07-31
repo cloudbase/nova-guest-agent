@@ -195,6 +195,9 @@ class CommandRunnerMixin(object):
             raise exception.GuestExecutionError(
                 "failed to open file: %s" % err) from err
         data = self._parse_command_output(ret)
+        if data is not dict:
+            LOG.debug("failed to read file")
+            return ""
         output = data.get("buf-b64", None)
         if output is None:
             return ""

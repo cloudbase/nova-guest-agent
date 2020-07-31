@@ -22,7 +22,6 @@ COMMAND_MAP = {
         "net_apply": "/scripts/apply-network-config",
     },
     agent.OS_TYPE_WINDOWS: {
-        # "net_apply": ["powershell.exe", "-NonInteractive", "-ExecutionPolicy", "RemoteSigned", "-EncodedCommand"],
         "net_apply": "C:\\scripts\\apply-network-config.ps1",
     }
 }
