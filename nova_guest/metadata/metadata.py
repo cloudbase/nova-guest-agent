@@ -79,7 +79,7 @@ class MetadataWrapper(object):
 
     def _get_host_routes(self, subnet):
         routes = []
-        for route in subnet["host_routes"]:
+        for route in subnet.get("host_routes", []):
             network, mask = self._get_netmask(
                 route["destination"])
             gateway = route["nexthop"]
@@ -91,21 +91,21 @@ class MetadataWrapper(object):
         return routes
 
     def _append_aditional_info(self, net, fixed_ip, subnet):
-        if subnet["enable_dhcp"]:
-            if subnet["ip_version"] == 4:
+        if subnet.get("enable_dhcp", False):
+            if subnet.get("ip_version", None) == 4:
                 return net
 
         net["netmask"] = self._get_netmask(subnet["cidr"])[1]
         net["ip_address"] = fixed_ip["ip_address"]
         net["routes"] = []
-        if subnet["gateway_ip"]:
+        if subnet.get("gateway_ip", None):
             net["routes"].append(
                 self._get_default_route(subnet)
             )
         net["routes"].extend(
             self._get_host_routes(subnet))
         net["services"] = []
-        for dns in subnet["dns_nameservers"]:
+        for dns in subnet.get("dns_nameservers", []):
             net["services"].append(
                 {
                     "type": "dns",
@@ -118,7 +118,7 @@ class MetadataWrapper(object):
         networks = []
         idx = 0
         for port in ports:
-            for fixed_ip in port["fixed_ips"]:
+            for fixed_ip in port.get("fixed_ips", []):
                 subnet = self._get_subnet_details(
                     fixed_ip["subnet_id"])
                 if len(subnet["subnets"]) != 1:
@@ -140,7 +140,7 @@ class MetadataWrapper(object):
     def _extract_services(self, nets):
         svcs = []
         for net in nets:
-            for svc in net["services"]:
+            for svc in net.get("services", []):
                 if svc not in svcs:
                     svcs.append(svc)
         return svcs
@@ -151,9 +151,9 @@ class MetadataWrapper(object):
 
     def get_metadata(self, instance_id):
         ports = self._neutron_client.list_ports(device_id=instance_id)
-        nets = self._format_networks(ports["ports"])
+        nets = self._format_networks(ports.get("ports", []))
         ret = {
-            "links": self._format_links(ports["ports"]),
+            "links": self._format_links(ports.get("ports", [])),
             "networks": nets,
             "services": self._extract_services(nets)
         }
