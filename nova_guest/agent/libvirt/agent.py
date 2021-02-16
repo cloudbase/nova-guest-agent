@@ -1,9 +1,11 @@
-import json
 import base64
-import time
+import contextlib
 import datetime
+import json
+import time
 
 from nova_guest import exception
+from nova_guest import utils
 
 import libvirt
 import libvirt_qemu
@@ -22,6 +24,19 @@ OS_TYPE_MAP = {
     # Generic linux ID returned by LinuxOSProber
     OS_TYPE_LINUX: OS_TYPE_LINUX,
 }
+
+
+@contextlib.contextmanager
+def _libvirt_conn(location=None):
+    con = libvirt.open(location)
+    try:
+        yield con
+    finally:
+        try:
+            con.close()
+        except:
+            pass
+
 
 class CommandRunnerMixin(object):
 
@@ -195,12 +210,15 @@ class CommandRunnerMixin(object):
             raise exception.GuestExecutionError(
                 "failed to open file: %s" % err) from err
         data = self._parse_command_output(ret)
-        if data is not dict:
+
+        if type(data) is not dict:
             LOG.debug("failed to read file")
             return ""
+
         output = data.get("buf-b64", None)
         if output is None:
             return ""
+
         if type(output) is not str:
             output = output.decode()
         return base64.b64decode(output.encode()).decode()
@@ -322,7 +340,7 @@ class WindowsOSProber(CommandRunnerMixin):
 class AgentConnection(CommandRunnerMixin):
 
     def __init__(self, location=None):
-        self._con = libvirt.open(location)
+        self._location = location
 
     def _get_supported_commands(self, dom):
         try:
@@ -353,11 +371,14 @@ class AgentConnection(CommandRunnerMixin):
                 "Missing required guest agent capabilities:"
                 " %s" % ", ".join(missing))
 
+    @utils.retry_on_error(sleep_seconds=1)
     def get_instance_by_name(self, instanceName):
-        allDomains = self._con.listAllDomains()
-        for dom in allDomains:
-            if dom.name() == instanceName:
-                return dom
+        with _libvirt_conn(self._location) as con:
+            allDomains = con.listAllDomains()
+            for dom in allDomains:
+                if dom.name() == instanceName:
+                    return dom
+
         raise exception.NotFound(
             "could not find instance with name %s" % instanceName)
 
@@ -368,22 +389,26 @@ class AgentConnection(CommandRunnerMixin):
         ret = libvirt_qemu.qemuAgentCommand(
             dom, json.dumps(command), 10, 0)
         return self._parse_command_output(ret)
-    
+
+    @utils.retry_on_error(sleep_seconds=1)
     def _get_os_info_from_vm(self, dom):
-        linuxProber = LinuxOSProber(self._con).probe(dom)
-        if linuxProber is not None:
-            return {"id": linuxProber}
-        windowsProber = WindowsOSProber(self._con)
-        if windowsProber is not None:
-            return {"id": windowsProber}
+        with _libvirt_conn(self._location) as con:
+            linuxProber = LinuxOSProber(con).probe(dom)
+            if linuxProber is not None:
+                return {"id": linuxProber}
+            windowsProber = WindowsOSProber(con).probe(dom)
+            if windowsProber is not None:
+                return {"id": windowsProber}
         return {"id": OS_TYPE_LINUX}
 
+    @utils.retry_on_error(sleep_seconds=1)
     def get_os_info(self, dom):
         cmds = self._get_supported_commands(dom)
         if cmds.get("guest-get-osinfo", False) is False:
             return self._get_os_info_from_vm(dom)
         return self._get_os_info_from_agent(dom)
 
+    @utils.retry_on_error(sleep_seconds=1)
     def get_guest_platform(self, dom):
         try:
             os_info = self.get_os_info(dom)
@@ -394,7 +419,8 @@ class AgentConnection(CommandRunnerMixin):
         # TODO: properly detect plarform
         os_id = os_info.get("id")
         return OS_TYPE_MAP.get(os_id, OS_TYPE_LINUX)
-    
+
+    @utils.retry_on_error(sleep_seconds=1)
     def is_alive(self, dom):
         state, _ = dom.state()
         if state != libvirt.VIR_DOMAIN_RUNNING:

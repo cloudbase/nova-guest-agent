@@ -1,4 +1,7 @@
+import functools
 import socket
+import time
+import traceback
 
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -35,3 +38,37 @@ def bad_request_on_error(error_message):
             return (is_valid, message)
         return wrapper
     return _bad_request_on_error
+
+
+def get_exception_details():
+    return traceback.format_exc()
+
+
+def retry_on_error(max_attempts=5, sleep_seconds=0,
+                   terminal_exceptions=[]):
+    def _retry_on_error(func):
+        @functools.wraps(func)
+        def _exec_retry(*args, **kwargs):
+            i = 0
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except KeyboardInterrupt as ex:
+                    LOG.debug("Got a KeyboardInterrupt, skip retrying")
+                    LOG.exception(ex)
+                    raise
+                except Exception as ex:
+                    if any([isinstance(ex, tex)
+                            for tex in terminal_exceptions]):
+                        raise
+
+                    i += 1
+                    if i < max_attempts:
+                        LOG.warn(
+                            "Exception occurred, retrying (%d/%d):\n%s",
+                            i, max_attempts, get_exception_details())
+                        time.sleep(sleep_seconds)
+                    else:
+                        raise
+        return _exec_retry
+    return _retry_on_error
